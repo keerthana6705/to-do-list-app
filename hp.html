@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .container {
+            background: rgba(245, 245, 245, 0.9); /* Semi-transparent to show background */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .task-form {
+            margin-bottom: 20px;
+        }
+        .task-form input, .task-form button {
+            margin: 5px 0;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+        }
+        .task-item.completed {
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+        .task-item button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .filter-buttons {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Professional To-Do List</h1>
+        
+        <div class="task-form">
+            <input type="text" id="taskDesc" placeholder="Task description" required>
+            <input type="number" id="taskPriority" min="1" max="5" placeholder="Priority (1-5)" value="3">
+            <input type="date" id="taskDueDate" placeholder="Due date">
+            <button onclick="addTask()">Add Task</button>
+        </div>
+
+        <div class="filter-buttons">
+            <button onclick="showAllTasks()">Show All</button>
+            <button onclick="showPendingTasks()">Show Pending Only</button>
+        </div>
+
+        <ul id="taskList" class="task-list"></ul>
+    </div>
+
+    <script>
+        class Task {
+            constructor(description, priority, dueDate) {
+                this.description = description;
+                this.priority = Math.max(1, Math.min(5, parseInt(priority) || 3));
+                this.dueDate = dueDate || null;
+                this.completed But=false;
+                this.createdAt = new Date().toISOString();
+            }
+
+            toString() {
+                const status = this.completed ? '✓' : '✗';
+                const due = this.dueDate ? ` Due: ${this.dueDate}` : '';
+                return `[${status}] P${this.priority} ${this.description}${due}`;
+            }
+        }
+
+        class TodoList {
+            constructor() {
+                this.tasks = this.loadTasks();
+                this.renderTasks();
+            }
+
+            loadTasks() {
+                const saved = localStorage.getItem('tasks');
+                return saved ? JSON.parse(saved).map(t => Object.assign(new Task(), t)) : [];
+            }
+
+            saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+
+            addTask(description, priority, dueDate) {
+                const task = new Task(description, priority, dueDate);
+                this.tasks.push(task);
+                this.saveTasks();
+                this.renderTasks();
+            }
+
+            removeTask(index) {
+                this.tasks.splice(index, 1);
+                this.saveTasks();
+                this.renderTasks();
+            }
+
+            completeTask(index) {
+                this.tasks[index].completed = true;
+                this.saveTasks();
+                this.renderTasks();
+            }
+
+            renderTasks(showCompleted = true) {
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+                const filteredTasks = this.tasks.filter(task => showCompleted || !task.completed);
+                
+                filteredTasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                    
+                    const span = document.createElement('span');
+                    span.textContent = task.toString();
+                    
+                    const completeBtn = document.createElement('button');
+                    completeBtn.textContent = 'Complete';
+                    completeBtn.onclick = () => this.completeTask(index);
+                    completeBtn.disabled = task.completed;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.onclick = () => this.removeTask(index);
+
+                    li.appendChild(span);
+                    li.appendChild(completeBtn);
+                    li.appendChild(removeBtn);
+                    taskList.appendChild(li);
+                });
+            }
+        }
+
+        const todoList = new TodoList();
+
+        function addTask() {
+            const desc = document.getElementById('taskDesc').value.trim();
+            const priority = document.getElementById('taskPriority').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+
+            if (!desc) {
+                alert('Description cannot be empty');
+                return;
+            }
+
+            todoList.addTask(desc, priority, dueDate);
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskPriority').value = '3';
+            document.getElementById('taskDueDate').value = '';
+        }
+
+        function showAllTasks() {
+            todoList.renderTasks(true);
+        }
+
+        function showPendingTasks() {
+            todoList.renderTasks(false);
+        }
+
+        // Handle Enter key press
+        document.getElementById('taskDesc').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+    </script>
+</body>
+</html>
